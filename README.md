@@ -49,7 +49,7 @@ Tôi ghi thật, không tô hồng:
 
 | Track | Trạng thái | Bằng chứng |
 |---|---|---|
-| `01` LLM SFT (text→SQL) | ✅ **Đã chạy thật, có số** (⚠️ xem ghi chú DataParallel) | **RTX 5060 Ti:** 0/60 → 44/60 (73.3%), 108s · **Kaggle T4:** 0/60 → **46/60 (76.67%)**, 623s. Qwen3-0.6B + LoRA r=16, 4000 mẫu. ⚠️ Hai số **không so trực tiếp được** — khác tập eval và khác dtype path; đó đúng là lý do cần multi-seed (mục 10b trong notebook). |
+| `01` LLM SFT (text→SQL) | ✅ **Run sạch, multi-seed** | **0/60 → 79.44% ± 0.79%** (3 seed) trên Kaggle T4 single-GPU, fp16, 308s. **σ=0.79% → mọi cải thiện <1.57% là nhiễu.** Chi tiết + so sánh các run ở [`results/`](results/) |
 | `04` OCR / VLM | ⚠️ **Pipeline đã verify chạy được** | Qwen3-VL-2B + CORD-v2, TRL tự chọn `DataCollatorForVisionLanguageModeling`, 4 step chạy sạch exit 0. **Chưa đo chất lượng.** |
 | `02` DPO | ❌ Chưa chạy | Code viết theo TRL 1.17.1 docs, chưa verify |
 | `03` VLM general | ❌ Chưa chạy | Dùng chung machinery với `04` |

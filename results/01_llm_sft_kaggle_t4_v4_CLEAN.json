@@ -1,0 +1,28 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "n_train": 4000,
+  "lora_r": 16,
+  "lr": 0.0002,
+  "train_seconds": 307.9,
+  "dtype": "torch.float16",
+  "gpu": "Tesla T4",
+  "acc_base": 0.0,
+  "acc_lora": 80.0,
+  "hit_base": 0,
+  "hit_lora": 48,
+  "n_eval": 60,
+  "final_train_loss": 0.053832441568374634,
+  "final_val_loss": 0.08138520270586014,
+  "acc_seeds": [
+    80.0,
+    80.0,
+    78.33333333333333
+  ],
+  "acc_mean": 79.44444444444444,
+  "acc_std": 0.7856742013183884,
+  "bf16_reported_by_torch": true,
+  "compute_cap": [
+    7,
+    5
+  ]
+}

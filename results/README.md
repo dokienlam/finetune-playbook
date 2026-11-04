@@ -2,29 +2,72 @@
 
 Không phải ước lượng. Đây là output của các run có thật, kèm log.
 
-## `01_llm_sft_kaggle_t4_v2.json` — LLM SFT text→SQL
+## ⭐ `01_llm_sft_kaggle_t4_v4_CLEAN.json` — run SẠCH, dùng số này
 
-| | RTX 5060 Ti (local) | Kaggle T4 |
-|---|---|---|
-| Qwen3-0.6B gốc | 0/60 (0%) | 0/60 (0%) |
-| + LoRA r=16 | 44/60 (**73.3%**) | 46/60 (**76.67%**) |
-| Thời gian train | **108 s** | **623 s** (~5.8x chậm hơn) |
-| dtype thực tế dùng | bf16 (native, sm_120) | bf16 **emulation** ⚠️ (xem dưới) |
-| train loss | → 0.059 | 0.569 → 0.059 |
-| val loss | — | 0.170 → 0.090 (chưa tăng lại) |
-| VRAM đỉnh | — | 12.75 GB |
-| latency / query | — | 1.93 s |
-| mẫu bị cắt token | — | 0/4000 (0.00%) |
+Single-GPU (đã ghim `CUDA_VISIBLE_DEVICES=0`), fp16 đúng, có multi-seed.
 
-⚠️ **Hai cột không so trực tiếp được**: khác tập eval (local dùng `range(4000,4060)`, Kaggle dùng
-`range(4200,4260)`) và khác dtype path. Chênh 2 mẫu (3.3%) hoàn toàn có thể là nhiễu seed.
-Đây chính là lý do notebook `01` có mục **10b multi-seed** đo `σ` của accuracy — không có `σ`
-thì không được phép nói cấu hình nào tốt hơn.
+| | Kết quả |
+|---|---|
+| Qwen3-0.6B gốc | **0 / 60 (0.0%)** |
+| + LoRA r=16, seed 0 | **48 / 60 (80.0%)** |
+| seed 1 | 48 / 60 (80.0%) |
+| seed 2 | 47 / 60 (78.3%) |
+| **accuracy (3 seed)** | **79.44% ± 0.79%** |
+| **→ ngưỡng nhiễu (2σ)** | **1.57%** |
+| Thời gian train | **308 s** |
+| dtype | `float16` |
+| train loss | 0.569 → 0.054 |
+| val loss | 0.173 → 0.081 (chưa tăng lại → không overfit) |
+| latency | 1.89 s/query |
 
-### Bẫy phát hiện được từ run này
-`torch.cuda.is_bf16_supported()` **trả về `True` trên Tesla T4 (compute cap 7.5)**, vì nó tính cả
-bf16 *emulation*. Auto-detect naive sẽ chọn bf16 trên card mà tensor core chỉ hỗ trợ fp16 →
-chạy được nhưng chậm. Cách đúng: `torch.cuda.get_device_capability(0)[0] >= 8`.
+### Con số quan trọng nhất: **σ = 0.79%**
+
+> Mọi "cải thiện" nhỏ hơn **~1.57%** là **không phân biệt được với nhiễu.**
+
+Đây là con số cho phép bạn nói "cấu hình A tốt hơn B". Không có nó thì mọi so sánh đều là
+phỏng đoán. Và phải là σ của **accuracy**, không phải σ của train loss.
+
+## So sánh các run — và vì sao chỉ run cuối đáng tin
+
+| Run | GPU | dtype | Thời gian | Accuracy | Đáng tin? |
+|---|---|---|---|---|---|
+| local RTX 5060 Ti | 1× (sm_120) | bf16 **native** | 108 s | 73.3% (44/60) | ⚠️ tập eval khác |
+| Kaggle v2 | **2×T4 `nn.DataParallel`** | bf16 **emulation** | 623 s | 76.67% (46/60) | ❌ cấu hình khác với khai báo |
+| **Kaggle v4** | 1×T4 (đã ghim) | **fp16** | **308 s** | **79.44% ± 0.79%** | ✅ |
+
+**623 s → 308 s = nhanh 2.02x.** Nhưng ⚠️ **hai biến đổi cùng lúc** (bf16-emulation → fp16,
+và bỏ `nn.DataParallel` 2 GPU → 1 GPU), nên **không được quy công cho riêng cái nào**.
+`notebooks/02_speed_kaggle.ipynb` cô lập riêng biến dtype để trả lời câu đó.
+
+Điều đáng chú ý: **1 GPU với dtype đúng nhanh gấp đôi 2 GPU với dtype sai.** Thêm GPU không
+cứu được một flag sai.
+
+### Bẫy phát hiện từ các run này
+
+**1. `torch.cuda.is_bf16_supported()` nói dối.** Log run sạch in thẳng ra:
+```
+May nay co 2 GPU:
+  GPU 0: Tesla T4 ...
+  GPU 1: Tesla T4 ...
+is_bf16_supported() bao : True   <- KHONG tin duoc
+compute cap[0] >= 8     : False  <- day moi dung
+-> dung fp16
+```
+Hàm đó tính cả bf16 *emulation* (không chạm tensor core). Cách đúng:
+`torch.cuda.get_device_capability(0)[0] >= 8`.
+
+**2. 2 GPU làm `Trainer` âm thầm dùng `nn.DataParallel`.** `per_device_train_batch_size=8`
+thành 16 mẫu/step, batch hiệu dụng 32 thay vì 16. Phát hiện được **chỉ vì** TRL `SFTTrainer`
+từ chối thẳng:
+```
+ValueError: SFTTrainer does not support `nn.DataParallel`, which `Trainer` uses when
+several GPUs are visible to a single process.
+```
+`Trainer` thuần thì chạy im lặng — sẽ không bao giờ biết. **Một lỗi ồn ào tốt hơn một mặc định
+im lặng.** Fix: `os.environ["CUDA_VISIBLE_DEVICES"]="0"` **trước** `import torch`.
+
+**3. `SAVE_MERGED=False` giảm output 1.2GB → 50MB.** `kaggle kernels output` tải **toàn bộ**
+working dir, không chọn lọc được.
 
 ## `framework_probe_kaggle_t4.json` — 24 framework trên Kaggle T4
 
@@ -52,28 +95,6 @@ Cài `unsloth`/`vllm` đã thay torch và làm gãy `torch.distributed`.
 benchmark chạy trước, cài nhóm phá môi trường để cuối cùng. Muốn benchmark sâu một framework
 nhóm 2 thì cho nó một session Kaggle riêng.
 
-
-## ⚠️ Cảnh báo về con số 623s của notebook 01
-
-Run đó chạy trên Kaggle với **2×T4 nhìn thấy được**, và `transformers.Trainer` **âm thầm bọc
-model vào `nn.DataParallel`** trong trường hợp đó. Nên:
-
-- `per_device_train_batch_size=8` thực tế thành **16 mẫu/step** (8 × 2 GPU)
-- batch hiệu dụng thành **32**, không phải 16 như ý định
-- `nn.DataParallel` vốn kém hiệu quả (bản thân PyTorch cũng khuyên dùng DDP)
-
-**Con số 623s và 76.67% vẫn là kết quả thật, nhưng ở một cấu hình khác với cấu hình tôi khai báo.**
-Đã fix bằng cách ghim `CUDA_VISIBLE_DEVICES=0` **trước** `import torch` trong cả 3 notebook,
-để mọi phép đo là single-GPU, công bằng và tái lập được.
-
-Phát hiện ra lỗi này là vì TRL `SFTTrainer` **từ chối thẳng** thay vì chạy im lặng:
-```
-ValueError: SFTTrainer does not support `nn.DataParallel`, which `Trainer` uses when
-several GPUs are visible to a single process. Launch the script with `accelerate launch`
-or `torchrun`, or make a single GPU visible with `CUDA_VISIBLE_DEVICES`.
-```
-Nếu chỉ dùng `Trainer` thuần thì sẽ không bao giờ biết — đó là lý do một lỗi *ồn ào*
-tốt hơn một mặc định *im lặng*.
 
 ## Giới hạn Kaggle đã gặp
 - **2 batch GPU session đồng thời** là tối đa (`Maximum batch GPU session count of 2 reached`)
