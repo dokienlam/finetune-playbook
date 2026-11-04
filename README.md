@@ -106,6 +106,17 @@ sentence-transformers 6.2.0
 | [`docs/05-vram-toi-uu.md`](docs/05-vram-toi-uu.md) | Bảng VRAM + các cần điều khiển bộ nhớ |
 | [`docs/06-kaggle.md`](docs/06-kaggle.md) | Chạy trên Kaggle, bẫy T4 |
 | [`leaderboard/README.md`](leaderboard/README.md) | Cách submit từng leaderboard |
+| [`notebooks/`](notebooks/) | **Notebook Kaggle-ready** — chạy được cả T4 (fp16) và Blackwell (bf16) |
+| [`src/`](src/) | Script đã verify chạy trên RTX 5060 Ti |
+
+## Notebook
+
+| Notebook | Nội dung |
+|---|---|
+| [`00_frameworks.ipynb`](notebooks/00_frameworks.ipynb) | **Framework shootout đo thật**: probe 24 framework (fine-tune/inference/eval/tracking), benchmark HF Trainer vs TRL, transformers vs vLLM, chạy `lm-eval`, và đo **phương sai multi-seed** — phần quyết định một kết quả có đáng tin hay không |
+| [`01_llm_sft.ipynb`](notebooks/01_llm_sft.ipynb) | Full pipeline: data → label masking → train (có val loss) → **3 biểu đồ** → phân loại lỗi → **inference** → merge & xuất model |
+
+Mỗi notebook có mục **Thí nghiệm** ở cuối: bảng các thay đổi kèm **kết quả kỳ vọng** để tự đối chiếu — đó là phần "vừa chạy vừa học".
 
 ## Giấy phép
 MIT cho code trong repo. Model và dataset giữ giấy phép riêng — chú ý `Llama-3.2` (license riêng của Meta), `gemma-*` (license riêng của Google), `MinerU` (AGPL-3.0), `ChartQA` (GPL-3.0).
