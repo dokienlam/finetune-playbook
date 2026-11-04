@@ -45,10 +45,39 @@ MTEB có subtrack **VN-MTEB** (~48 task tiếng Việt, Pham et al., EACL 2026 F
 
 ## Trạng thái code trong repo này — đọc trước khi tin
 
-Tôi ghi thật, không tô hồng:
+Ghi thật, không tô hồng. **Phân biệt rõ "chưa chạy" và "chưa viết".**
 
-| Track | Trạng thái | Bằng chứng |
+### ✅ Đã có code, đã chạy thật, có số
+
+| File | Nội dung | Bằng chứng |
 |---|---|---|
+| [`notebooks/01_llm_sft.ipynb`](notebooks/01_llm_sft.ipynb) | LLM SFT text→SQL, full pipeline | **0/60 → 79.44% ± 0.79%** (3 seed), Kaggle T4 single-GPU fp16, 308s. σ=0.79% → **mọi cải thiện <1.57% là nhiễu** |
+| [`notebooks/02_speed_kaggle.ipynb`](notebooks/02_speed_kaggle.ipynb) | Benchmark 10 cần điều khiển tốc độ | **bf16-emulation chậm hơn fp16 3.19x.** 7/10 cấu hình nằm trong nhiễu → chỉ 2 cần điều khiển là thật |
+| [`notebooks/00_frameworks.ipynb`](notebooks/00_frameworks.ipynb) | Probe 23 framework + HF vs TRL + vLLM + lm-eval | **TRL nhanh 1.20x, ít VRAM 29%** so với `Trainer` tự viết · **vLLM nhanh 1.62x** · 15/16 framework nhóm an toàn dùng được |
+| [`src/*.py`](src/) | Bản local của track LLM SFT | RTX 5060 Ti: 44/60 (73.3%), 108s |
+
+Số liệu chi tiết + log: [`results/`](results/)
+
+### ⚠️ Đã có code, pipeline verify chạy được, CHƯA đo chất lượng
+
+| File | Nội dung | Mức verify |
+|---|---|---|
+| [`src/train_ocr_lora.py`](src/train_ocr_lora.py) | OCR/VLM: Qwen3-VL-2B + CORD-v2 → JSON | 4 step chạy sạch exit 0 trên RTX 5060 Ti. TRL tự chọn `DataCollatorForVisionLanguageModeling`. **Chưa có số accuracy.** |
+
+### ❌ CHƯA VIẾT CODE — chỉ có hướng dẫn trong `docs/`
+
+Các track dưới đây **không có file nào trong repo**. `docs/` có đủ siêu tham số, pipeline và bẫy
+để bạn tự dựng, nhưng **đừng mong clone về là chạy được**:
+
+| Track | Hướng dẫn ở đâu | Ghi chú quan trọng |
+|---|---|---|
+| DPO / GRPO / KTO | [`docs/03`](docs/03-sieu-tham-so.md) · [`docs/01`](docs/01-cay-quyet-dinh.md) | 🔴 lr của DPO/GRPO là `1e-6`, thấp hơn SFT **200 lần** |
+| VLM general (visual QA) | [`docs/03`](docs/03-sieu-tham-so.md) · [`docs/08`](docs/08-pipeline-toan-tap.md) | Dùng chung machinery với `src/train_ocr_lora.py` |
+| Embedding + Reranker | [`docs/03`](docs/03-sieu-tham-so.md) | Đường vào **VN-MTEB** — xem [`leaderboard/`](leaderboard/README.md) |
+| Speech / ASR | [`docs/02`](docs/02-du-lieu.md) · [`docs/03`](docs/03-sieu-tham-so.md) | 🔴 Common Voice **đã bị gỡ khỏi HuggingFace (10/2025)** — mọi tutorial cũ gãy |
+| Diffusion LoRA | [`docs/03`](docs/03-sieu-tham-so.md) | SD1.5 là lựa chọn thực tế duy nhất đã xác nhận cho 16GB |
+
+---|---|---|
 | `01` LLM SFT (text→SQL) | ✅ **Run sạch, multi-seed** | **0/60 → 79.44% ± 0.79%** (3 seed) trên Kaggle T4 single-GPU, fp16, 308s. **σ=0.79% → mọi cải thiện <1.57% là nhiễu.** Chi tiết + so sánh các run ở [`results/`](results/) |
 | `04` OCR / VLM | ⚠️ **Pipeline đã verify chạy được** | Qwen3-VL-2B + CORD-v2, TRL tự chọn `DataCollatorForVisionLanguageModeling`, 4 step chạy sạch exit 0. **Chưa đo chất lượng.** |
 | `02` DPO | ❌ Chưa chạy | Code viết theo TRL 1.17.1 docs, chưa verify |
