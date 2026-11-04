@@ -105,6 +105,7 @@ sentence-transformers 6.2.0
 | [`docs/04-danh-gia.md`](docs/04-danh-gia.md) | Đánh giá đúng — tại sao loss lừa bạn |
 | [`docs/05-vram-toi-uu.md`](docs/05-vram-toi-uu.md) | Bảng VRAM + các cần điều khiển bộ nhớ |
 | [`docs/06-kaggle.md`](docs/06-kaggle.md) | Chạy trên Kaggle, bẫy T4 |
+| [`docs/07-frameworks.md`](docs/07-frameworks.md) | Framework nào cho việc gì + bẫy API đã gặp thật |
 | [`leaderboard/README.md`](leaderboard/README.md) | Cách submit từng leaderboard |
 | [`notebooks/`](notebooks/) | **Notebook Kaggle-ready** — chạy được cả T4 (fp16) và Blackwell (bf16) |
 | [`src/`](src/) | Script đã verify chạy trên RTX 5060 Ti |
