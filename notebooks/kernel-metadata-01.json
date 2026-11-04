@@ -1,0 +1,9 @@
+{
+  "id": "lamdo2k3/ftplaybook-01-llm-sft-text2sql",
+  "title": "FTPlaybook 01 LLM SFT text2sql",
+  "code_file": "01_llm_sft.ipynb",
+  "language": "python", "kernel_type": "notebook",
+  "is_private": "true", "enable_gpu": "true", "enable_tpu": "false",
+  "enable_internet": "true", "machine_shape": "",
+  "dataset_sources": [], "competition_sources": [], "kernel_sources": [], "model_sources": []
+}

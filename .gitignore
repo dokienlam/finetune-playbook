@@ -1,0 +1,7 @@
+.hf-cache/
+hf-cache/
+out/
+.venv/
+__pycache__/
+*.safetensors
+*.gguf
