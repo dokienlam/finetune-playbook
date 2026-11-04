@@ -13,6 +13,23 @@ Giá trị khởi đầu, không phải chân lý. Nhưng đừng tự nghĩ ra 
 | `lora_dropout` | **0** | Lên 0.1 nếu nghi overfit |
 | `target_modules` | `q,k,v,o,gate,up,down` | Target hết. Chỉ attention là không đủ |
 | batch hiệu dụng | **16** | VD: `batch=2` × `accum=8` |
+
+### ⚠️ Về `packing` và `group_by_length` — đã đo, kết quả ngược trực giác
+
+Trên dữ liệu instruction ngắn và đều (`p50=103, p95=137, max=184` token), đo thật trên T4:
+
+| Chiến lược | vs pad động | VRAM |
+|---|---|---|
+| pad động (pad theo batch-max) | **1.00x** (nhanh nhất) | 7.61 GB |
+| sort theo `length` | 1.00x — **không lợi gì** | 7.63 GB |
+| TRL `packing=True` | **0.73x — CHẬM HƠN** | 12.06 GB |
+
+Lý do: collator pad theo **batch-max**, không phải `max_length`. Phân phối độ dài hẹp → không
+còn padding để tiết kiệm. Còn `packing` nhồi sequence đầy tới `max_length=512` nên mỗi step
+nặng gấp ~4 lần.
+
+**Packing chỉ thắng khi** độ dài phân tán rộng, hoặc `max_length` gần `p95`, hoặc bạn tính
+chi phí theo token/giây (pretrain) chứ không theo epoch. Số liệu: [`results/02_speed_kaggle_t4.md`](../results/02_speed_kaggle_t4.md)
 | `warmup_steps` | 5–10% tổng step | v5 bỏ `warmup_ratio` |
 | `lr_scheduler_type` | `cosine` hoặc `linear` | |
 | `weight_decay` | 0.01 | |

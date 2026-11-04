@@ -223,9 +223,10 @@ weight_decay       = 0.01
 
 | # | Trick | Ghi chú |
 |---|---|---|
-| 1 | **Chọn đúng dtype** | Xem bẫy `is_bf16_supported()` bên dưới. Lỗi 1 dòng, tốn nhiều nhất |
-| 2 | **`packing=True`** (TRL) | Nhồi nhiều mẫu vào 1 sequence. Mạnh nhất khi mẫu ngắn hơn `max_length` nhiều |
-| 3 | **`group_by_length=True`** | Một flag, gom mẫu cùng độ dài → giảm padding. Gần như free |
+| 1 | **Chọn đúng dtype** | **Đã đo: bf16-emulation chậm hơn fp16 2.83x trên T4.** Lỗi 1 dòng, tốn nhiều nhất. Xem bẫy `is_bf16_supported()` |
+| 2 | **`packing=True`** (TRL) | ⚠️ **Đã đo: chậm hơn 0.73x** trên dữ liệu ngắn+đều. Chỉ thắng khi độ dài phân tán rộng hoặc `max_length` gần `p95` |
+| 3 | ~~`group_by_length`~~ / sort theo length | ⚠️ **Đã đo: không lợi gì** (1.00x) khi phân phối độ dài hẹp. Và `group_by_length` đã bị bỏ ở transformers v5 |
+| 3b | **Dùng TRL thay vì tự viết `Trainer`** | **Đã đo: nhanh 1.20x, ít VRAM 29%**, loss y hệt |
 | 4 | **Tăng batch tới sát trần VRAM** | Rẻ nhất |
 | 5 | **`attn_implementation="sdpa"`** | 🔴 FlashAttention-2 **cần sm_80+**, không chạy trên T4 |
 | 6 | **Unsloth** | Công bố ~2x nhanh + ít VRAM. 🔴 ghi đè torch → session riêng |
@@ -469,3 +470,24 @@ python tools/validate_nb.py notebooks/*.ipynb
 
 Nó parse AST từng cell Python (bỏ qua cell `!`/`%` magic) và in ra đúng dòng lỗi.
 **Thêm bước này vào quy trình trước mọi lần push** — một lượt Kaggle là ~10 phút GPU.
+
+
+---
+
+## Số đo thật — thay thế mọi suy luận ở trên
+
+Mọi lời khuyên trong tài liệu này đã được kiểm chứng (hoặc **bác bỏ**) bằng run thật trên
+Kaggle T4. Xem [`results/`](../results/):
+
+| Phát hiện | Số |
+|---|---|
+| bf16-emulation vs fp16 trên T4 | **2.83x chậm hơn** |
+| TRL SFTTrainer vs HF Trainer tự viết | **1.20x nhanh hơn, 29% ít VRAM**, loss y hệt |
+| vLLM vs `transformers.generate` | **1.62x nhanh hơn** (batch 32) |
+| `packing=True` trên data ngắn+đều | **0.73x — chậm hơn** |
+| sort theo length khi phân phối hẹp | **1.00x — không lợi gì** |
+| σ accuracy (3 seed, LoRA text→SQL) | **0.79% → ngưỡng nhiễu 1.57%** |
+
+🔴 **Hai lời khuyên của tôi đã bị số liệu bác bỏ** (packing và group_by_length). Giữ lại trong
+tài liệu kèm số, không xoá — vì sai ở đâu cũng là thông tin. Bài học: **đo một lần đáng hơn ba
+lần suy luận.**
