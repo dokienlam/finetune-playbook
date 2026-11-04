@@ -51,3 +51,31 @@ Cài `unsloth`/`vllm` đã thay torch và làm gãy `torch.distributed`.
 **Cách sửa đã áp dụng:** chia framework làm nhóm an toàn / nhóm phá môi trường, và **đảo thứ tự** —
 benchmark chạy trước, cài nhóm phá môi trường để cuối cùng. Muốn benchmark sâu một framework
 nhóm 2 thì cho nó một session Kaggle riêng.
+
+
+## ⚠️ Cảnh báo về con số 623s của notebook 01
+
+Run đó chạy trên Kaggle với **2×T4 nhìn thấy được**, và `transformers.Trainer` **âm thầm bọc
+model vào `nn.DataParallel`** trong trường hợp đó. Nên:
+
+- `per_device_train_batch_size=8` thực tế thành **16 mẫu/step** (8 × 2 GPU)
+- batch hiệu dụng thành **32**, không phải 16 như ý định
+- `nn.DataParallel` vốn kém hiệu quả (bản thân PyTorch cũng khuyên dùng DDP)
+
+**Con số 623s và 76.67% vẫn là kết quả thật, nhưng ở một cấu hình khác với cấu hình tôi khai báo.**
+Đã fix bằng cách ghim `CUDA_VISIBLE_DEVICES=0` **trước** `import torch` trong cả 3 notebook,
+để mọi phép đo là single-GPU, công bằng và tái lập được.
+
+Phát hiện ra lỗi này là vì TRL `SFTTrainer` **từ chối thẳng** thay vì chạy im lặng:
+```
+ValueError: SFTTrainer does not support `nn.DataParallel`, which `Trainer` uses when
+several GPUs are visible to a single process. Launch the script with `accelerate launch`
+or `torchrun`, or make a single GPU visible with `CUDA_VISIBLE_DEVICES`.
+```
+Nếu chỉ dùng `Trainer` thuần thì sẽ không bao giờ biết — đó là lý do một lỗi *ồn ào*
+tốt hơn một mặc định *im lặng*.
+
+## Giới hạn Kaggle đã gặp
+- **2 batch GPU session đồng thời** là tối đa (`Maximum batch GPU session count of 2 reached`)
+- 30h GPU/tuần, 12h/session
+- `kaggle kernels output` tải **toàn bộ** working dir, không chọn lọc được

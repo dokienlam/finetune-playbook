@@ -49,7 +49,7 @@ Tôi ghi thật, không tô hồng:
 
 | Track | Trạng thái | Bằng chứng |
 |---|---|---|
-| `01` LLM SFT (text→SQL) | ✅ **Đã chạy thật trên 2 GPU, có số** | **RTX 5060 Ti:** 0/60 → 44/60 (73.3%), 108s · **Kaggle T4:** 0/60 → **46/60 (76.67%)**, 623s. Qwen3-0.6B + LoRA r=16, 4000 mẫu. ⚠️ Hai số **không so trực tiếp được** — khác tập eval và khác dtype path; đó đúng là lý do cần multi-seed (mục 10b trong notebook). |
+| `01` LLM SFT (text→SQL) | ✅ **Đã chạy thật, có số** (⚠️ xem ghi chú DataParallel) | **RTX 5060 Ti:** 0/60 → 44/60 (73.3%), 108s · **Kaggle T4:** 0/60 → **46/60 (76.67%)**, 623s. Qwen3-0.6B + LoRA r=16, 4000 mẫu. ⚠️ Hai số **không so trực tiếp được** — khác tập eval và khác dtype path; đó đúng là lý do cần multi-seed (mục 10b trong notebook). |
 | `04` OCR / VLM | ⚠️ **Pipeline đã verify chạy được** | Qwen3-VL-2B + CORD-v2, TRL tự chọn `DataCollatorForVisionLanguageModeling`, 4 step chạy sạch exit 0. **Chưa đo chất lượng.** |
 | `02` DPO | ❌ Chưa chạy | Code viết theo TRL 1.17.1 docs, chưa verify |
 | `03` VLM general | ❌ Chưa chạy | Dùng chung machinery với `04` |
@@ -83,7 +83,9 @@ sentence-transformers 6.2.0
 2. **`SFTConfig` dùng `max_length`, không còn `max_seq_length`.**
 3. **Fine-tune VLM phải đặt `max_length=None`** — truncate sẽ cắt đứt image placeholder token → crash.
 4. **Qwen3-VL cần `torchvision`** dù bạn không dùng video.
-5. **Kaggle T4 = sm_75, KHÔNG có bf16 — và `torch.cuda.is_bf16_supported()` trả về `True` trên nó.** Hàm đó tính cả bf16 *emulation*, nên auto-detect kiểu `BF16 = torch.cuda.is_bf16_supported()` sẽ chọn sai và chạy chậm. Phải dùng `torch.cuda.get_device_capability(0)[0] >= 8`. Run đầu của notebook `01` đã rơi vào đúng bẫy này.
+5. **Kaggle cấp 2×T4, và `Trainer` âm thầm bọc model vào `nn.DataParallel`** khi thấy nhiều GPU → `batch_size` thực tế nhân đôi, và TRL `SFTTrainer` thì **từ chối thẳng** (`ValueError: does not support nn.DataParallel`). Phải `os.environ["CUDA_VISIBLE_DEVICES"]="0"` **trước** `import torch`. Đây là lý do run v2 của notebook `00` ERROR, và là lý do con số 623s của notebook `01` **không phải single-GPU**.
+6. **Kaggle chỉ cho 2 batch GPU session đồng thời** (`Maximum batch GPU session count of 2 reached`).
+7. **Kaggle T4 = sm_75, KHÔNG có bf16 — và `torch.cuda.is_bf16_supported()` trả về `True` trên nó.** Hàm đó tính cả bf16 *emulation*, nên auto-detect kiểu `BF16 = torch.cuda.is_bf16_supported()` sẽ chọn sai và chạy chậm. Phải dùng `torch.cuda.get_device_capability(0)[0] >= 8`. Run đầu của notebook `01` đã rơi vào đúng bẫy này.
 6. **Common Voice đã bị gỡ khỏi HuggingFace (10/2025)** → mọi tutorial ASR cũ dùng `mozilla-foundation/common_voice_*` đều gãy. Giờ phải qua Mozilla Data Collective.
 
 ---
@@ -106,6 +108,7 @@ sentence-transformers 6.2.0
 | [`docs/05-vram-toi-uu.md`](docs/05-vram-toi-uu.md) | Bảng VRAM + các cần điều khiển bộ nhớ |
 | [`docs/06-kaggle.md`](docs/06-kaggle.md) | Chạy trên Kaggle, bẫy T4 |
 | [`docs/07-frameworks.md`](docs/07-frameworks.md) | Framework nào cho việc gì + bẫy API đã gặp thật |
+| [`docs/08-pipeline-toan-tap.md`](docs/08-pipeline-toan-tap.md) | ⭐ **Toàn bộ pipeline + mọi trick** — sơ đồ luồng 8 chặng, trick tăng tốc/tiết kiệm VRAM, pipeline theo từng modality, bảng 12 bẫy đã gặp thật |
 | [`leaderboard/README.md`](leaderboard/README.md) | Cách submit từng leaderboard |
 | [`notebooks/`](notebooks/) | **Notebook Kaggle-ready** — chạy được cả T4 (fp16) và Blackwell (bf16) |
 | [`src/`](src/) | Script đã verify chạy trên RTX 5060 Ti |
@@ -117,6 +120,7 @@ sentence-transformers 6.2.0
 |---|---|
 | [`00_frameworks.ipynb`](notebooks/00_frameworks.ipynb) | **Framework shootout đo thật**: probe 24 framework (fine-tune/inference/eval/tracking), benchmark HF Trainer vs TRL, transformers vs vLLM, chạy `lm-eval`, và đo **phương sai multi-seed** — phần quyết định một kết quả có đáng tin hay không |
 | [`01_llm_sft.ipynb`](notebooks/01_llm_sft.ipynb) | Full pipeline: data → label masking → train (có val loss) → **3 biểu đồ** → phân loại lỗi → **inference** → merge & xuất model |
+| [`02_speed_kaggle.ipynb`](notebooks/02_speed_kaggle.ipynb) | **Tối ưu tốc độ, đo thật**: bf16-emulation vs fp16 · padding động vs `group_by_length` vs `packing` · batch 8/16/32 · `eager` vs `sdpa` · **1×T4 vs 2×T4 data parallel** |
 
 Mỗi notebook có mục **Thí nghiệm** ở cuối: bảng các thay đổi kèm **kết quả kỳ vọng** để tự đối chiếu — đó là phần "vừa chạy vừa học".
 

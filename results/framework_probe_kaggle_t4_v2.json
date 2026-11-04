@@ -1,0 +1,146 @@
+[
+  {
+    "name": "transformers",
+    "install": true,
+    "import": true,
+    "ver": "5.22.1",
+    "min": 0.232351811726888,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "peft",
+    "install": true,
+    "import": true,
+    "ver": "0.21.2",
+    "min": 0.027794599533081055,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "trl",
+    "install": true,
+    "import": true,
+    "ver": "1.17.1",
+    "min": 0.04472980499267578,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "accelerate",
+    "install": true,
+    "import": true,
+    "ver": "1.15.0",
+    "min": 0.026901753743489583,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "bitsandbytes",
+    "install": true,
+    "import": true,
+    "ver": "0.50.2",
+    "min": 0.06198654572168986,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "lm-eval",
+    "install": true,
+    "import": true,
+    "ver": "0.4.13",
+    "min": 0.22495707273483276,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "lighteval",
+    "install": true,
+    "import": true,
+    "ver": "0.13.0",
+    "min": 0.1643583059310913,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "mteb",
+    "install": true,
+    "import": true,
+    "ver": "2.26.33",
+    "min": 0.09644295771916707,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "deepeval",
+    "install": true,
+    "import": true,
+    "ver": "4.3.3",
+    "min": 0.1168536384900411,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "ragas",
+    "install": true,
+    "import": false,
+    "ver": "-",
+    "min": 0.14652978579203288,
+    "err": "ModuleNotFoundError: No module named 'langchain_community.chat_models.vertexai'",
+    "group": "eval"
+  },
+  {
+    "name": "evaluate",
+    "install": true,
+    "import": true,
+    "ver": "0.4.6",
+    "min": 0.029641064008076985,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "sentence-transformers",
+    "install": true,
+    "import": true,
+    "ver": "5.7.0",
+    "min": 0.029508729775746662,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "optimum",
+    "install": true,
+    "import": true,
+    "ver": "?",
+    "min": 0.038179314136505126,
+    "err": "",
+    "group": "inference"
+  },
+  {
+    "name": "wandb",
+    "install": true,
+    "import": true,
+    "ver": "0.28.1",
+    "min": 0.028194105625152587,
+    "err": "",
+    "group": "tracking"
+  },
+  {
+    "name": "mlflow",
+    "install": true,
+    "import": true,
+    "ver": "3.18.0",
+    "min": 0.22438206672668456,
+    "err": "",
+    "group": "tracking"
+  },
+  {
+    "name": "langfuse",
+    "install": true,
+    "import": true,
+    "ver": "5.1.0",
+    "min": 0.06965182622273763,
+    "err": "",
+    "group": "tracking"
+  }
+]
