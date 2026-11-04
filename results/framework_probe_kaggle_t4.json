@@ -1,0 +1,218 @@
+[
+  {
+    "name": "transformers",
+    "install": true,
+    "import": true,
+    "ver": "5.22.1",
+    "min": 0.2705771128336589,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "peft",
+    "install": true,
+    "import": true,
+    "ver": "0.21.2",
+    "min": 0.02917009194691976,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "trl",
+    "install": true,
+    "import": true,
+    "ver": "1.17.1",
+    "min": 0.04833879868189494,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "accelerate",
+    "install": true,
+    "import": true,
+    "ver": "1.15.0",
+    "min": 0.029582273960113526,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "bitsandbytes",
+    "install": true,
+    "import": true,
+    "ver": "0.50.2",
+    "min": 0.07147266467412312,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "unsloth",
+    "install": true,
+    "import": true,
+    "ver": "2026.11.1",
+    "min": 0.470499591032664,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "torchtune",
+    "install": true,
+    "import": false,
+    "ver": "-",
+    "min": 0.033232410748799644,
+    "err": "ModuleNotFoundError: No module named 'torchao.dtypes.nf4tensor'",
+    "group": "finetune"
+  },
+  {
+    "name": "llamafactory",
+    "install": true,
+    "import": true,
+    "ver": "0.9.5",
+    "min": 0.6597592115402222,
+    "err": "",
+    "group": "finetune"
+  },
+  {
+    "name": "axolotl",
+    "install": false,
+    "import": false,
+    "ver": "-",
+    "min": 0.31582998037338256,
+    "err": "ERROR: Failed to build 'zstandard' when getting requirements to build wheel",
+    "group": "finetune"
+  },
+  {
+    "name": "vllm",
+    "install": true,
+    "import": true,
+    "ver": "0.33.0",
+    "min": 5.652661323547363,
+    "err": "",
+    "group": "inference"
+  },
+  {
+    "name": "sglang",
+    "install": false,
+    "import": false,
+    "ver": "-",
+    "min": 2.274353897571564,
+    "err": "\u2570\u2500> outlines_core",
+    "group": "inference"
+  },
+  {
+    "name": "llama-cpp-python",
+    "install": true,
+    "import": true,
+    "ver": "0.3.36",
+    "min": 4.806867325305939,
+    "err": "",
+    "group": "inference"
+  },
+  {
+    "name": "optimum",
+    "install": true,
+    "import": true,
+    "ver": "?",
+    "min": 0.042505502700805664,
+    "err": "",
+    "group": "inference"
+  },
+  {
+    "name": "lm-eval",
+    "install": true,
+    "import": true,
+    "ver": "0.4.13",
+    "min": 0.2421361247698466,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "lighteval",
+    "install": true,
+    "import": true,
+    "ver": "0.13.0",
+    "min": 0.21772391796112062,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "mteb",
+    "install": true,
+    "import": true,
+    "ver": "2.26.33",
+    "min": 0.09731305837631225,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "vlmeval",
+    "install": false,
+    "import": false,
+    "ver": "-",
+    "min": 0.011981594562530517,
+    "err": "ERROR: No matching distribution found for vlmeval",
+    "group": "eval"
+  },
+  {
+    "name": "deepeval",
+    "install": true,
+    "import": true,
+    "ver": "4.3.3",
+    "min": 0.12506295839945475,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "ragas",
+    "install": true,
+    "import": false,
+    "ver": "-",
+    "min": 0.14139965375264485,
+    "err": "ModuleNotFoundError: No module named 'langchain_community.chat_models.vertexai'",
+    "group": "eval"
+  },
+  {
+    "name": "evaluate",
+    "install": true,
+    "import": true,
+    "ver": "0.4.6",
+    "min": 0.03416926066080729,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "sentence-transformers",
+    "install": true,
+    "import": true,
+    "ver": "5.7.0",
+    "min": 0.03551692962646484,
+    "err": "",
+    "group": "eval"
+  },
+  {
+    "name": "wandb",
+    "install": true,
+    "import": true,
+    "ver": "0.28.1",
+    "min": 0.03237659136454264,
+    "err": "",
+    "group": "tracking"
+  },
+  {
+    "name": "mlflow",
+    "install": true,
+    "import": true,
+    "ver": "3.18.0",
+    "min": 0.23030675649642945,
+    "err": "",
+    "group": "tracking"
+  },
+  {
+    "name": "langfuse",
+    "install": true,
+    "import": true,
+    "ver": "5.1.0",
+    "min": 0.0547894557317098,
+    "err": "",
+    "group": "tracking"
+  }
+]
