@@ -388,6 +388,7 @@ reranker (q,d,0/1) ──→ BinaryCrossEntropyLoss
 | Bẫy | Triệu chứng | Fix |
 |---|---|---|
 | `warmup_ratio` bị bỏ ở transformers v5 | `TypeError: unexpected keyword argument 'warmup_ratio'` | `warmup_steps=N` |
+| **`group_by_length` cũng bị bỏ ở v5** | `TypeError: unexpected keyword argument 'group_by_length'` | `ds.sort("length")` cho cùng hiệu ứng, chạy mọi bản |
 | `SFTConfig` đổi tên | không có `max_seq_length` | `max_length` |
 | torchao cũ trên Kaggle | `ImportError: incompatible version of torchao` khi `get_peft_model()` — **không hề nhắc LoRA** | `pip uninstall -y torchao` |
 | Qwen3-VL cần torchvision | `Qwen3VLVideoProcessor requires the Torchvision library` | `pip install torchvision` |
@@ -427,3 +428,44 @@ reranker (q,d,0/1) ──→ BinaryCrossEntropyLoss
 - [ ] Với harness: tên task, số shot, phiên bản harness, commit hash
 
 > Khoảng cách giữa "tôi fine-tune được" và "tôi có kết quả đáng tin" chính là cái checklist này.
+
+
+---
+
+## Phòng vệ trước thay đổi API — viết code sống được qua các bản
+
+Session dựng repo này gặp **hai** lỗi cùng loại: `warmup_ratio` rồi `group_by_length`, đều bị
+transformers v5 bỏ. Bài học không phải "nhớ hai tên đó" mà là **đừng tin tutorial, hãy introspect**.
+
+### Tra tên tham số còn tồn tại
+```python
+import inspect
+from transformers import TrainingArguments
+P = set(inspect.signature(TrainingArguments.__init__).parameters)
+for k in ["group_by_length","warmup_ratio","warmup_steps","torch_compile"]:
+    print(f"{k:22s}", "CO" if k in P else "KHONG CO")
+```
+
+### Helper tự lọc tham số không tồn tại
+```python
+TA_PARAMS = set(inspect.signature(TrainingArguments.__init__).parameters)
+
+def ta(**kw):
+    'Tao TrainingArguments, bo im lang tham so ban nay khong ho tro.'
+    miss = [k for k in kw if k not in TA_PARAMS]
+    if miss: print("[bo tham so khong ton tai]:", miss)
+    return TrainingArguments(**{k: v for k, v in kw.items() if k in TA_PARAMS})
+```
+Code viết kiểu này **không chết** khi chạy trên bản transformers khác — nó chỉ bỏ cần điều
+khiển không có và nói cho bạn biết.
+
+### Validate notebook TRƯỚC khi push
+Hai lỗi syntax trong notebook `02` chỉ bị phát hiện sau khi Kaggle chạy và ERROR — mất một
+lượt GPU vô ích. Kiểm tra trước bằng [`tools/validate_nb.py`](../tools/validate_nb.py):
+
+```bash
+python tools/validate_nb.py notebooks/*.ipynb
+```
+
+Nó parse AST từng cell Python (bỏ qua cell `!`/`%` magic) và in ra đúng dòng lỗi.
+**Thêm bước này vào quy trình trước mọi lần push** — một lượt Kaggle là ~10 phút GPU.

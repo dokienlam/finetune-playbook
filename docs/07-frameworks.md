@@ -29,6 +29,7 @@ Experimental: `ORPOTrainer`, `CPOTrainer`, `OnlineDPOTrainer`, `A2POTrainer`, `G
 | Lỗi | Nguyên nhân | Fix |
 |---|---|---|
 | `TypeError: ... unexpected keyword argument 'warmup_ratio'` | transformers v5 bỏ nó | `warmup_steps=N` |
+| `TypeError: ... unexpected keyword argument 'group_by_length'` | transformers v5 **cũng bỏ** nó | Sort dataset: `ds.sort("length")` — chạy được mọi bản |
 | `SFTConfig` không có `max_seq_length` | đổi tên | `max_length` |
 | VLM crash lúc train | truncate cắt image placeholder token | `max_length=None` |
 | `ImportError: incompatible version of torchao` khi `get_peft_model()` | Kaggle có torchao 0.10.0, peft 0.21.2 cần ≥0.16.0 | `pip uninstall -y torchao` |

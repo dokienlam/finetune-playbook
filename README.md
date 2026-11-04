@@ -112,6 +112,7 @@ sentence-transformers 6.2.0
 | [`leaderboard/README.md`](leaderboard/README.md) | Cách submit từng leaderboard |
 | [`notebooks/`](notebooks/) | **Notebook Kaggle-ready** — chạy được cả T4 (fp16) và Blackwell (bf16) |
 | [`src/`](src/) | Script đã verify chạy trên RTX 5060 Ti |
+| [`tools/validate_nb.py`](tools/validate_nb.py) | Parse AST từng cell notebook — **chạy trước mọi lần push Kaggle**, một lượt lỗi là ~10 phút GPU |
 | [`results/`](results/) | **Dữ liệu đo thật** — output run Kaggle + bảng 24 framework + các bẫy phát hiện được |
 
 ## Notebook
