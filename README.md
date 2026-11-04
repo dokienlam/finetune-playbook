@@ -49,7 +49,7 @@ Tôi ghi thật, không tô hồng:
 
 | Track | Trạng thái | Bằng chứng |
 |---|---|---|
-| `01` LLM SFT (text→SQL) | ✅ **Đã chạy thật, có số** | 0/60 → **44/60 (73.3%)** trên 60 mẫu held-out. Train 108s trên RTX 5060 Ti. Qwen3-0.6B + LoRA r=16. |
+| `01` LLM SFT (text→SQL) | ✅ **Đã chạy thật trên 2 GPU, có số** | **RTX 5060 Ti:** 0/60 → 44/60 (73.3%), 108s · **Kaggle T4:** 0/60 → **46/60 (76.67%)**, 623s. Qwen3-0.6B + LoRA r=16, 4000 mẫu. ⚠️ Hai số **không so trực tiếp được** — khác tập eval và khác dtype path; đó đúng là lý do cần multi-seed (mục 10b trong notebook). |
 | `04` OCR / VLM | ⚠️ **Pipeline đã verify chạy được** | Qwen3-VL-2B + CORD-v2, TRL tự chọn `DataCollatorForVisionLanguageModeling`, 4 step chạy sạch exit 0. **Chưa đo chất lượng.** |
 | `02` DPO | ❌ Chưa chạy | Code viết theo TRL 1.17.1 docs, chưa verify |
 | `03` VLM general | ❌ Chưa chạy | Dùng chung machinery với `04` |
@@ -83,7 +83,7 @@ sentence-transformers 6.2.0
 2. **`SFTConfig` dùng `max_length`, không còn `max_seq_length`.**
 3. **Fine-tune VLM phải đặt `max_length=None`** — truncate sẽ cắt đứt image placeholder token → crash.
 4. **Qwen3-VL cần `torchvision`** dù bạn không dùng video.
-5. **Kaggle T4 = sm_75, KHÔNG có bf16** → phải `fp16=True`, `bf16=False`. Máy Blackwell thì ngược lại, nên dùng bf16.
+5. **Kaggle T4 = sm_75, KHÔNG có bf16 — và `torch.cuda.is_bf16_supported()` trả về `True` trên nó.** Hàm đó tính cả bf16 *emulation*, nên auto-detect kiểu `BF16 = torch.cuda.is_bf16_supported()` sẽ chọn sai và chạy chậm. Phải dùng `torch.cuda.get_device_capability(0)[0] >= 8`. Run đầu của notebook `01` đã rơi vào đúng bẫy này.
 6. **Common Voice đã bị gỡ khỏi HuggingFace (10/2025)** → mọi tutorial ASR cũ dùng `mozilla-foundation/common_voice_*` đều gãy. Giờ phải qua Mozilla Data Collective.
 
 ---

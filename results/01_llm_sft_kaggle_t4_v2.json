@@ -1,0 +1,16 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "n_train": 4000,
+  "lora_r": 16,
+  "lr": 0.0002,
+  "train_seconds": 623.4,
+  "dtype": "torch.bfloat16",
+  "gpu": "Tesla T4",
+  "acc_base": 0.0,
+  "acc_lora": 76.67,
+  "hit_base": 0,
+  "hit_lora": 46,
+  "n_eval": 60,
+  "final_train_loss": 0.05926985144615173,
+  "final_val_loss": 0.09004285931587219
+}

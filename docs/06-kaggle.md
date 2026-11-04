@@ -20,13 +20,27 @@ Notebook → **Settings** (bên phải):
 
 ## Bẫy đã gặp thật
 
-### 1. T4 không có bf16
-`bf16=True` trên T4 → lỗi hoặc rơi về fp32 rất chậm. Luôn tự nhận diện:
+### 1. T4 không có bf16 — và `is_bf16_supported()` **nói dối** ⚠️ lỗi thật đã gặp
+
+`torch.cuda.is_bf16_supported()` **trả về `True` trên T4 (sm_75)**, vì nó tính cả bf16
+*emulation*. Chạy được, nhưng không dùng tensor core → chậm hơn fp16 nhiều, trong khi T4 lại
+có tensor core fp16 rất mạnh.
+
+Bằng chứng từ log run đầu tiên của `notebooks/01_llm_sft.ipynb`:
+```
+compute cap : (7, 5)          <- sm_75, KHONG co bf16 native
+bf16=True  =>  dung bf16      <- is_bf16_supported() bao True
+Train xong trong 623s
+```
+
+**Cách kiểm tra đúng** — dùng compute capability, bf16 native chỉ có từ sm_80 (Ampere):
 ```python
-BF16  = torch.cuda.is_bf16_supported()
+BF16  = torch.cuda.get_device_capability(0)[0] >= 8
 DTYPE = torch.bfloat16 if BF16 else torch.float16
 # roi: bf16=BF16, fp16=not BF16
 ```
+(Bản torch mới có `is_bf16_supported(including_emulation=False)` — nhưng check capability
+thì chạy được trên mọi bản.)
 
 ### 2. torchao cũ phá peft ⚠️ lỗi thật đã gặp
 Kaggle cài sẵn `torchao 0.10.0`. `peft 0.21.2` yêu cầu `>=0.16.0` và `is_torchao_available()`

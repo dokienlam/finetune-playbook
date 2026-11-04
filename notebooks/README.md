@@ -24,7 +24,9 @@ Rồi **Settings → Accelerator = GPU T4 x2** và **Internet = On**.
 
 ## Bẫy bắt buộc biết
 
-1. **T4 không có bf16** (sm_75) → phải `fp16`. Notebook tự xử lý.
+1. **T4 không có bf16** (sm_75) → phải `fp16`. ⚠️ Nhưng `torch.cuda.is_bf16_supported()`
+   **trả về `True` trên T4** (nó tính cả emulation), nên auto-detect naive sẽ chọn sai.
+   Notebook dùng `get_device_capability(0)[0] >= 8`. Run đầu đã rơi vào bẫy này — xem log.
 2. **Kaggle cài sẵn `torchao 0.10.0`** nhưng `peft 0.21.2` cần `>=0.16.0` → `get_peft_model()`
    raise `ImportError` với thông báo không hề nhắc LoRA. Fix: `pip uninstall -y torchao`.
    Đây là lỗi thật đã gặp khi chạy notebook `01` lần đầu.
