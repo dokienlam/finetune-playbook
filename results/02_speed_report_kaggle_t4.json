@@ -1,0 +1,92 @@
+{
+  "gpu": "Tesla T4",
+  "n_gpu": 1,
+  "cap": [
+    7,
+    5
+  ],
+  "bf16_native": false,
+  "is_bf16_supported_reported": true,
+  "results": [
+    {
+      "name": "sort theo length",
+      "secs": 22.025909185409546,
+      "vram": 7.606651392,
+      "loss": 0.2179648208618164,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "batch 8",
+      "secs": 22.03256583213806,
+      "vram": 7.606651392,
+      "loss": 0.22236997604370118,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "pad dong",
+      "secs": 22.081704139709473,
+      "vram": 7.606651392,
+      "loss": 0.22237703323364258,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "attn=sdpa",
+      "secs": 22.169203281402588,
+      "vram": 7.606651392,
+      "loss": 0.2224593925476074,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "batch 16",
+      "secs": 22.257556200027466,
+      "vram": 13.862622208,
+      "loss": 0.2690378189086914,
+      "dtype": "float16",
+      "bs": 16
+    },
+    {
+      "name": "fp16",
+      "secs": 22.80563473701477,
+      "vram": 7.606651392,
+      "loss": 0.22150894165039062,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "attn=eager",
+      "secs": 22.81125545501709,
+      "vram": 8.14795008,
+      "loss": 0.22249340057373046,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "TRL khong packing",
+      "secs": 23.79561972618103,
+      "vram": 4.977447424,
+      "loss": 0.22188423156738282,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "TRL packing=True",
+      "secs": 30.216224193572998,
+      "vram": 11.878305792,
+      "loss": 0.35516112500971014,
+      "dtype": "float16",
+      "bs": 8
+    },
+    {
+      "name": "bf16",
+      "secs": 72.79770994186401,
+      "vram": 8.411730944,
+      "loss": 0.22354949951171876,
+      "dtype": "bfloat16",
+      "bs": 8
+    }
+  ]
+}

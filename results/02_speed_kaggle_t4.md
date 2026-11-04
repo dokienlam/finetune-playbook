@@ -1,79 +1,128 @@
 # Kết quả đo tốc độ — Kaggle Tesla T4 (single-GPU, đã ghim `CUDA_VISIBLE_DEVICES=0`)
 
-Thước đo: **thời gian train xong cùng 400 mẫu, 1 epoch**. Phân phối độ dài: `p50=103, p95=137, max=184` token.
+Thước đo: **thời gian train xong cùng 400 mẫu, 1 epoch.**
+Phân phối độ dài: `p50=103, p95=137, max=184` token · `max_length=512`.
 
-Run này ERROR ở mục batch-size (bug của tôi, xem cuối), nhưng **mọi số trước đó đã ra**.
+## Bảng đầy đủ
 
-## 1. ⭐ bf16 emulation vs fp16 — con số lớn nhất
+| Cấu hình | Giây | VRAM đỉnh |
+|---|---|---|
+| sort theo `length` | 22.0 | 7.61 GB |
+| batch 8 | 22.0 | 7.61 GB |
+| pad động | 22.1 | 7.61 GB |
+| `attn=sdpa` | 22.2 | 7.61 GB |
+| batch 16 | 22.3 | **13.86 GB** |
+| **fp16** | 22.8 | 7.61 GB |
+| `attn=eager` | 22.8 | 8.15 GB |
+| TRL không packing | 23.8 | **4.98 GB** ← ít VRAM nhất |
+| TRL `packing=True` | 30.2 | 11.88 GB |
+| **bf16** | **72.8** | 8.41 GB |
+| batch 32 | — | OOM (`Tried to allocate 2.43 GiB`) |
+
+## ⚠️ Cách đọc bảng này cho đúng
+
+**7 cấu hình đầu nằm trong khoảng 22.0–22.8s — chênh nhau 3.6%.** Mỗi cấu hình chỉ chạy **1 lần**.
+Notebook 01 đo được σ của accuracy là 0.79%; σ của thời gian chưa đo nhưng chắc chắn không nhỏ hơn
+mức chênh 3.6% này. **Nên 7 cấu hình đó là không phân biệt được với nhau.**
+
+Chỉ **hai** thứ nổi lên rõ ràng khỏi nhiễu:
+
+| | So với nhanh nhất |
+|---|---|
+| **bf16 (emulation)** | **3.31x chậm hơn** |
+| `packing=True` | 1.37x chậm hơn |
+
+Mọi cần điều khiển khác, trên workload này, **không đáng để tinh chỉnh**.
+
+## 1. ⭐ bf16 emulation vs fp16: chậm hơn 3.19x
 
 ```
--> Tren Tesla T4 (khong co bf16 native): bf16 cham hon fp16 2.83x.
+fp16   22.8s
+bf16   72.8s     -> 3.19x cham hon
 ```
 
-**bf16 chậm hơn fp16 2.83 lần** trên T4. Đây là phép đo cô lập đúng biến dtype, và nó
-**giải thích trọn vẹn** việc notebook 01 từ 623s xuống 308s (2.02x) — tức dtype là nguyên nhân
-chính, không phải việc bỏ `nn.DataParallel`.
+T4 là sm_75, **không có bf16 native**. PyTorch chạy bf16 bằng emulation, không chạm tensor core —
+trong khi T4 có tensor core fp16 rất mạnh.
 
-Nguyên nhân: T4 là sm_75, **không có bf16 native**. PyTorch chạy bf16 bằng emulation, không
-chạm tensor core — trong khi T4 lại có tensor core fp16 rất mạnh.
-
-🔴 Và `torch.cuda.is_bf16_supported()` **trả về `True`** trên card này. Phải dùng
-`torch.cuda.get_device_capability(0)[0] >= 8`.
-
-## 2. ⚠️ Chiến lược padding — kết quả NGƯỢC với dự đoán của tôi
-
-| Chiến lược | Giây | vs pad động | VRAM đỉnh |
-|---|---|---|---|
-| **pad động** (collator pad theo batch-max) | **22.8** | **1.00x** | 7.61 GB |
-| sort theo `length` | 22.8 | 1.00x | 7.63 GB |
-| TRL không packing | 26.8 | 0.85x | 4.99 GB |
-| TRL `packing=True` | 31.1 | **0.73x** | 12.06 GB |
-
-### Hai dự đoán của tôi đều sai
-
-**Sai 1: "`group_by_length` / sort theo độ dài là win gần như free".**
-Thực tế **không lợi gì** (22.8s vs 22.8s). Lý do: pad động đã pad theo *batch-max* chứ không
-phải `max_length`, và phân phối độ dài ở đây rất hẹp (p50=103, p95=137, max=184) — nên **không
-còn padding nào để tiết kiệm**. Sort chỉ có ý nghĩa khi độ dài **phân tán rộng**.
-
-**Sai 2: "`packing=True` là đòn mạnh nhất về thuật toán, có thể 2-4x".**
-Thực tế **chậm hơn 0.73x** và tốn **gấp 1.6x VRAM**. Lý do: packing nhồi mỗi sequence đầy tới
-`max_length=512`, nên mỗi step xử lý 512 token thay vì ~130. Ít step hơn nhưng mỗi step nặng
-hơn nhiều — với mẫu ngắn và chỉ 1 epoch thì không bù lại được.
-
-### Rút ra: packing có lợi khi nào?
-
-Packing tăng **throughput tính theo token**, không phải tăng tốc "train xong tập dữ liệu".
-Nó chỉ thắng khi:
-- độ dài mẫu **phân tán rộng** (padding động vẫn còn thừa nhiều), **hoặc**
-- `max_length` gần `p95` (sequence đầy sẵn, packing không làm nặng thêm), **hoặc**
-- bạn tính chi phí theo **token/giây** (ví dụ pretrain), không theo epoch
-
-Với dữ liệu instruction ngắn và đều như ở đây, **pad động đã gần tối ưu** — không cần làm gì thêm.
-
-🔴 **Bài học phương pháp:** tôi suy luận "p50=103 mà max_length=512 → thừa 79% → packing phải
-thắng lớn". Suy luận đó bỏ qua việc collator pad theo batch-max, không phải max_length. **Đo một
-lần đáng hơn ba lần suy luận.**
-
-## 3. `group_by_length` đã bị bỏ ở transformers v5
-
-Helper `ta(**kw)` bắt được và notebook **vẫn chạy tiếp**, in ra 6 lần:
+🔴 Và `torch.cuda.is_bf16_supported()` **trả về `True`** trên card này. Log của chính notebook:
 ```
-[bo tham so khong ton tai]: ['group_by_length']
+torch.cuda.is_bf16_supported() bao: True
+bf16 NATIVE (cap>=8.0)            : False
+-> Card nay KHONG co bf16 native.
 ```
-Đó là mục đích của helper: khi API đổi, code bỏ cần điều khiển không có và **nói cho bạn biết**,
-thay vì chết.
+Cách đúng: `torch.cuda.get_device_capability(0)[0] >= 8`.
 
-## 4. 🔴 Bug làm run này ERROR — của tôi
+**Đây là một dòng code quyết định 3.19x tốc độ** — lớn hơn mọi tối ưu khác cộng lại.
+Nó cũng giải thích trọn vẹn việc notebook 01 từ 623s xuống 308s.
 
+## 2. 🔴 BA lời khuyên của tôi bị số liệu bác bỏ
+
+| Tôi đã viết | Đo thật | Tại sao tôi sai |
+|---|---|---|
+| `packing=True` *"đòn mạnh nhất, 2-4x"* | **1.37x CHẬM HƠN** (30.2s), VRAM 11.88 vs 7.61 | Packing nhồi sequence đầy tới `max_length=512` → mỗi step nặng gấp ~4 lần. Ít step hơn không bù lại được |
+| sort theo length *"win gần như free"* | **22.0 vs 22.1s — không lợi gì** | Collator đã pad theo **batch-max**, không phải `max_length`. Phân phối độ dài hẹp → không còn padding để tiết kiệm |
+| *"tăng batch tới sát trần VRAM"* | batch 16: **không nhanh hơn** (22.3s) nhưng VRAM **1.8x** (13.86 GB) | GPU đã bão hoà ở batch 8 với sequence ngắn. Tăng batch chỉ mua thêm rủi ro OOM |
+
+**Mẫu số chung của cả ba:** tôi suy luận từ *"p50=103 mà max_length=512 → thừa 79%"* mà bỏ qua
+việc **pad động đã giải quyết xong vấn đề đó**. Suy luận đúng về hiện tượng, sai về hệ thống thật.
+
+> **Đo một lần đáng hơn ba lần suy luận.** Giữ lại cả ba lời khuyên sai trong tài liệu kèm số
+> liệu bác bỏ — sai ở đâu cũng là thông tin.
+
+## 3. `sdpa` vs `eager`: tốc độ ngang nhau, nhưng VRAM khác thật
+
+22.2s vs 22.8s (2.7% — trong nhiễu), nhưng **VRAM 7.61 vs 8.15 GB** là khác biệt thật và
+nhất quán. Dùng `sdpa`.
+
+🔴 **FlashAttention-2 không dùng được trên T4.** Notebook tự kiểm tra:
+```
+flash-attn chua cai. Tren sm_75 (T4) thi KHONG cai duoc - can sm_80+.
+Card nay: compute cap (7, 5) -> KHONG dung duoc FA2
+```
+Mọi tutorial khuyên FA2 đều vô dụng ở đây.
+
+## 4. Tham số nào còn tồn tại ở transformers 5.22.1
+
+Notebook tự introspect (113 tham số):
+
+| Tham số | Có? |
+|---|---|
+| `group_by_length` | ❌ **đã bỏ** |
+| `length_column_name` | ✅ còn (nhưng flag dùng nó thì mất — API không nhất quán) |
+| `warmup_ratio` | ❌ **đã bỏ** |
+| `warmup_steps` | ✅ |
+| `gradient_checkpointing` · `optim` · `torch_compile` | ✅ |
+
+Helper `ta(**kw)` bắt được `group_by_length` và notebook **vẫn chạy tiếp** thay vì chết.
+
+## 5. 🔴 Phần 2×T4 thất bại — lỗi escaping của tôi
+
+Script `train_dp.py` được notebook viết ra bị:
+```
+File "/kaggle/working/train_dp.py", line 16
+    {"role":"user","content":f"Schema:
+                             ^
+SyntaxError: unterminated f-string literal
+```
+`\n` trong f-string đã thành newline thật khi generator sinh cell. **Cùng loại lỗi đã gặp 2 lần
+trước đó** trong cùng session.
+
+Đã sửa, và thêm bước notebook **tự `ast.parse()` script ngay sau khi viết file**, trước khi tốn
+một lần `accelerate launch`:
 ```python
-except torch.cuda.OutOfMemoryError:
-    print(f"batch {bs:<24s} OOM")      # bs la int, :s -> ValueError
+import ast
+try: ast.parse(open("/kaggle/working/train_dp.py").read()); print("train_dp.py: syntax OK")
+except SyntaxError as e: print("SYNTAX LOI:", e); raise
 ```
-→ `ValueError: Unknown format code 's' for object of type 'int'`
 
-Batch 16 hoặc 32 **thật sự OOM** (`Tried to allocate 1.67 GiB, 1.57 GiB free`), nhưng chính
-cái except handler lại crash. **Handler lỗi cũng phải được test.**
+**Bài học:** code sinh ra code thì phải validate code sinh ra. `tools/validate_nb.py` kiểm tra
+cell notebook, nhưng **không** kiểm tra chuỗi script nhúng trong cell — đó là lỗ đã để lọt lỗi này.
 
-Phụ: OOM xảy ra ở 14.56GB dù VRAM đỉnh của pad-động chỉ 7.61GB → có phân mảnh bộ nhớ giữa các
-lần bench. Đã thêm `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
+## 6. Bug `except` handler (đã sửa, xác nhận hoạt động)
+
+Trước: `print(f"batch {bs:<24s} OOM")` với `bs` là `int` → `ValueError` **trong chính except handler**.
+Sau khi sửa, run này in ra đúng:
+```
+batch 32: OOM (CUDA out of memory. Tried to allocate 2.43 GiB. GPU 0 has a total capa)
+```
+**Handler lỗi cũng phải được test.**

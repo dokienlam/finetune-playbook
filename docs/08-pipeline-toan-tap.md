@@ -227,7 +227,7 @@ weight_decay       = 0.01
 | 2 | **`packing=True`** (TRL) | ⚠️ **Đã đo: chậm hơn 0.73x** trên dữ liệu ngắn+đều. Chỉ thắng khi độ dài phân tán rộng hoặc `max_length` gần `p95` |
 | 3 | ~~`group_by_length`~~ / sort theo length | ⚠️ **Đã đo: không lợi gì** (1.00x) khi phân phối độ dài hẹp. Và `group_by_length` đã bị bỏ ở transformers v5 |
 | 3b | **Dùng TRL thay vì tự viết `Trainer`** | **Đã đo: nhanh 1.20x, ít VRAM 29%**, loss y hệt |
-| 4 | **Tăng batch tới sát trần VRAM** | Rẻ nhất |
+| 4 | ~~Tăng batch tới sát trần VRAM~~ | ⚠️ **Đã đo: batch 8→16 không nhanh hơn, VRAM 1.8x.** GPU bão hoà sớm với sequence ngắn |
 | 5 | **`attn_implementation="sdpa"`** | 🔴 FlashAttention-2 **cần sm_80+**, không chạy trên T4 |
 | 6 | **Unsloth** | Công bố ~2x nhanh + ít VRAM. 🔴 ghi đè torch → session riêng |
 | 7 | **Cache model** thành Kaggle Model/Dataset | Khỏi tải lại mỗi session |
@@ -481,13 +481,15 @@ Kaggle T4. Xem [`results/`](../results/):
 
 | Phát hiện | Số |
 |---|---|
-| bf16-emulation vs fp16 trên T4 | **2.83x chậm hơn** |
+| bf16-emulation vs fp16 trên T4 | **3.19x chậm hơn** (run đầy đủ: 72.8s vs 22.8s) |
 | TRL SFTTrainer vs HF Trainer tự viết | **1.20x nhanh hơn, 29% ít VRAM**, loss y hệt |
 | vLLM vs `transformers.generate` | **1.62x nhanh hơn** (batch 32) |
-| `packing=True` trên data ngắn+đều | **0.73x — chậm hơn** |
+| `packing=True` trên data ngắn+đều | **1.37x chậm hơn** (30.2s vs 22.0s), VRAM 1.6x |
 | sort theo length khi phân phối hẹp | **1.00x — không lợi gì** |
+| tăng batch 8→16 | **không nhanh hơn**, VRAM 1.8x (GPU đã bão hoà) |
+| `sdpa` vs `eager` | tốc độ ngang, nhưng **VRAM 7.61 vs 8.15 GB** |
 | σ accuracy (3 seed, LoRA text→SQL) | **0.79% → ngưỡng nhiễu 1.57%** |
 
-🔴 **Hai lời khuyên của tôi đã bị số liệu bác bỏ** (packing và group_by_length). Giữ lại trong
+🔴 **BA lời khuyên của tôi đã bị số liệu bác bỏ** (packing · sort theo length · tăng batch). Giữ lại trong
 tài liệu kèm số, không xoá — vì sai ở đâu cũng là thông tin. Bài học: **đo một lần đáng hơn ba
 lần suy luận.**
