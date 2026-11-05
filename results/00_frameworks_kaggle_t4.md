@@ -83,15 +83,38 @@ phải `pip freeze` khi báo cáo kết quả.
 
 ## 5. Nhóm phá môi trường
 
-| Framework | Bản | Cài (A) | Cài (B) | Kết quả |
-|---|---|---|---|---|
-| **unsloth** | 2026.11.1 / .2 | 0.5 | 0.5 ph | ✅ |
-| **llamafactory** | 0.9.5 | 0.6 | **13.1 ph** | ✅ nhưng thời gian cài **biến động 22x** |
-| torchtune | — | 0.0 | 0.0 | ❌ import: `No module named 'torchao.dtypes.nf4tensor'` |
-| axolotl | — | 0.3 | — | ❌ A: `Failed to build 'zstandard'` · **B: kernel chết** |
-| sglang | — | 0.5 | — | ❌ `outlines_core` |
-| **llama-cpp-python** | 0.3.36 | 4.7 | — | ✅ |
-| vlmeval | — | — | — | 🔴 **không có trên PyPI**, lần trước làm chết kernel |
+Bảng đầy đủ, lấy từ `wreckers_partial.json` (run D — run đầu tiên đo được **cả 6**):
+
+| Framework | Bản | Phút | Kết quả |
+|---|---|---|---|
+| **unsloth** | 2026.11.2 | 0.5 | ✅ |
+| **llamafactory** | 0.9.5 | 1.3 | ✅ |
+| torchtune | — | 0.0 | ❌ import: `No module named 'torchao.dtypes.nf4tensor'` |
+| axolotl | — | 0.3 | ❌ cài: `Failed to build 'zstandard'` |
+| sglang | — | 0.6 | ❌ cài: `outlines_core` |
+| **llama-cpp-python** | 0.3.36 | 4.4 | ✅ |
+| vlmeval | — | — | 🔴 **không có trên PyPI** — bỏ khỏi probe |
+
+🔴 **`llamafactory` cài mất 0.6 / 13.1 / 1.3 phút qua ba run** — biến động **22 lần**. Cùng lệnh,
+cùng môi trường. Đừng đưa thời gian cài vào kế hoạch mà không có biên an toàn lớn.
+
+### ⭐ Kernel chết ở đâu — và đó chính là bằng chứng
+
+Run D đo xong cả 6 framework, rồi kernel chết ở **ô kiểm tra ngay sau đó**:
+
+```python
+print("torch con nguyen ven khong?")
+import importlib, torch.distributed as _d
+importlib.reload(_d)        # <- kernel chet o day
+```
+
+Phép kiểm tra "torch còn nguyên vẹn không?" không in ra được câu trả lời, vì **chỉ reload
+`torch.distributed` thôi đã đủ làm sập kernel**. Câu trả lời là: hỏng nặng hơn cả mức có thể báo
+lỗi tử tế.
+
+Đó là bằng chứng mạnh nhất cho bài học của cả notebook này: **đừng cài framework "ghi đè torch"
+vào cùng kernel bạn đang train.** Không phải vì nó có thể lỗi — mà vì nó phá môi trường tới mức
+chính việc kiểm tra cũng không chạy được.
 
 🔴 **`llamafactory` cài mất 13.1 phút ở run B so với 0.6 phút ở run A** — chênh 22 lần. Nguyên
 nhân có thể là phải build wheel thay vì lấy wheel sẵn. Nếu bạn đưa nó vào pipeline, **đừng giả
@@ -106,6 +129,7 @@ Notebook chạy **3 lần**, kernel chết **cả 3 lần**, mỗi lần ở **m
 | A | `vlmeval` (cuối danh sách) | `llama-cpp-python` trước đó **thành công**, 4.7 phút |
 | B | `axolotl` | — |
 | C | `llama-cpp-python` | `sglang` trước đó báo `INSTALL-FAIL` **sạch sẽ** |
+| D | ô `reload(torch.distributed)` | **cả 6 framework đo xong và đã lưu** ✅ |
 
 **Nguyên nhân không phải một package cụ thể.** Bằng chứng: cùng một package vừa thành công ở
 run này lại làm chết kernel ở run khác. Nguyên nhân thật là **hư hại môi trường tích luỹ** — sau
@@ -120,6 +144,7 @@ package chết khác nhau nghĩa là package không phải biến số.
 
 1. **Lưu kết quả trước và sau từng bước** → mất tối đa 1 phép đo. Notebook giờ ghi
    `wreckers_partial.json` sau *từng* framework, không phải sau cả vòng lặp.
+   ✅ **Đã kiểm chứng ở run D**: kernel vẫn chết, nhưng cả 6 phép đo đều còn.
 2. **Một kernel cho một framework** nếu cần kết quả đầy đủ chắc chắn.
 
 `axolotl` đã được **khôi phục** vào danh sách probe — nó không phải nguyên nhân, và kết quả
@@ -157,3 +182,6 @@ pip install axolotl --no-build-isolation                          # axolotl, van
 | Eval RAG/LLM-judge | ragas | cần thêm `langchain-community` |
 | Tracking | wandb · mlflow · langfuse | cả ba đều chạy |
 | ❌ Tránh trên Kaggle | torchtune · axolotl · sglang · vlmeval | không cài/import được |
+
+⚠️ `unsloth`, `llamafactory`, `llama-cpp-python` **cài được** nhưng vẫn thuộc nhóm phá môi trường —
+cài xong thì torch trong kernel đó không còn tin được nữa. Cho mỗi cái **một notebook riêng.**

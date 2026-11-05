@@ -1,0 +1,56 @@
+[
+ {
+  "name": "unsloth",
+  "install": true,
+  "import": true,
+  "ver": "2026.11.2",
+  "min": 0.4895150899887085,
+  "err": "",
+  "group": "finetune"
+ },
+ {
+  "name": "llamafactory",
+  "install": true,
+  "import": true,
+  "ver": "0.9.5",
+  "min": 1.3200745701789856,
+  "err": "",
+  "group": "finetune"
+ },
+ {
+  "name": "torchtune",
+  "install": true,
+  "import": false,
+  "ver": "-",
+  "min": 0.03371191422144572,
+  "err": "ModuleNotFoundError: No module named 'torchao.dtypes.nf4tensor'",
+  "group": "finetune"
+ },
+ {
+  "name": "axolotl",
+  "install": false,
+  "import": false,
+  "ver": "-",
+  "min": 0.3166759490966797,
+  "err": "ERROR: Failed to build 'zstandard' when getting requirements to build wheel",
+  "group": "finetune"
+ },
+ {
+  "name": "sglang",
+  "install": false,
+  "import": false,
+  "ver": "-",
+  "min": 0.5765795985857646,
+  "err": "\u2570\u2500> outlines_core",
+  "group": "inference"
+ },
+ {
+  "name": "llama-cpp-python",
+  "install": true,
+  "import": true,
+  "ver": "0.3.36",
+  "min": 4.385384686787924,
+  "err": "",
+  "group": "inference"
+ }
+]
