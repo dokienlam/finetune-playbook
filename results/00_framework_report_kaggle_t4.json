@@ -1,0 +1,176 @@
+{
+  "gpu": "Tesla T4",
+  "cap": [
+    7,
+    5
+  ],
+  "bf16": false,
+  "frameworks": [
+    {
+      "name": "transformers",
+      "install": true,
+      "import": true,
+      "ver": "5.22.1",
+      "min": 0.3074717481931051,
+      "err": "",
+      "group": "finetune"
+    },
+    {
+      "name": "peft",
+      "install": true,
+      "import": true,
+      "ver": "0.21.2",
+      "min": 0.030575807889302573,
+      "err": "",
+      "group": "finetune"
+    },
+    {
+      "name": "trl",
+      "install": true,
+      "import": true,
+      "ver": "1.17.1",
+      "min": 0.05143208106358846,
+      "err": "",
+      "group": "finetune"
+    },
+    {
+      "name": "accelerate",
+      "install": true,
+      "import": true,
+      "ver": "1.15.0",
+      "min": 0.030172395706176757,
+      "err": "",
+      "group": "finetune"
+    },
+    {
+      "name": "bitsandbytes",
+      "install": true,
+      "import": true,
+      "ver": "0.50.2",
+      "min": 0.10087579091389974,
+      "err": "",
+      "group": "finetune"
+    },
+    {
+      "name": "lm-eval",
+      "install": true,
+      "import": true,
+      "ver": "0.4.13",
+      "min": 0.26596480210622153,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "lighteval",
+      "install": true,
+      "import": true,
+      "ver": "0.13.0",
+      "min": 0.1943191409111023,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "mteb",
+      "install": true,
+      "import": true,
+      "ver": "2.26.33",
+      "min": 0.09717126687367757,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "deepeval",
+      "install": true,
+      "import": true,
+      "ver": "4.3.3",
+      "min": 0.1442904790242513,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "ragas",
+      "install": true,
+      "import": false,
+      "ver": "-",
+      "min": 0.15877179702123007,
+      "err": "ModuleNotFoundError: No module named 'langchain_community.chat_models.vertexai'",
+      "group": "eval"
+    },
+    {
+      "name": "evaluate",
+      "install": true,
+      "import": true,
+      "ver": "0.4.6",
+      "min": 0.03178532520929973,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "sentence-transformers",
+      "install": true,
+      "import": true,
+      "ver": "5.7.0",
+      "min": 0.032237533728281656,
+      "err": "",
+      "group": "eval"
+    },
+    {
+      "name": "optimum",
+      "install": true,
+      "import": true,
+      "ver": "?",
+      "min": 0.04262444972991943,
+      "err": "",
+      "group": "inference"
+    },
+    {
+      "name": "wandb",
+      "install": true,
+      "import": true,
+      "ver": "0.28.1",
+      "min": 0.030976645151774087,
+      "err": "",
+      "group": "tracking"
+    },
+    {
+      "name": "mlflow",
+      "install": true,
+      "import": true,
+      "ver": "3.18.0",
+      "min": 0.23828152815500894,
+      "err": "",
+      "group": "tracking"
+    },
+    {
+      "name": "langfuse",
+      "install": true,
+      "import": true,
+      "ver": "5.1.0",
+      "min": 0.14387278159459432,
+      "err": "",
+      "group": "tracking"
+    }
+  ],
+  "finetune_bench": [
+    {
+      "name": "HF Trainer + PEFT",
+      "s_per_step": 1.4189473032951354,
+      "vram": 4.50045696,
+      "loss": 0.3132000923156738
+    },
+    {
+      "name": "TRL SFTTrainer",
+      "s_per_step": 1.20003399848938,
+      "vram": 3.183069696,
+      "loss": 0.31220297813415526
+    }
+  ],
+  "infer_hf_tps": 110.22444749972752,
+  "infer_vllm_tps": 173.91412610198407,
+  "wreckers": [],
+  "bf16_reported_by_torch": true,
+  "compute_cap": [
+    7,
+    5
+  ]
+}
