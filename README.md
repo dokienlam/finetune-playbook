@@ -52,7 +52,7 @@ Ghi thật, không tô hồng. **Phân biệt rõ "chưa chạy" và "chưa vi�
 | File | Nội dung | Bằng chứng |
 |---|---|---|
 | [`notebooks/01_llm_sft.ipynb`](notebooks/01_llm_sft.ipynb) | LLM SFT text→SQL, full pipeline | **0/60 → 79.44% ± 0.79%** (3 seed), Kaggle T4 single-GPU fp16, 308s. σ=0.79% → **mọi cải thiện <1.57% là nhiễu** |
-| [`notebooks/02_speed_kaggle.ipynb`](notebooks/02_speed_kaggle.ipynb) | Benchmark 10 cần điều khiển tốc độ | **bf16-emulation chậm hơn fp16 3.19x.** 7/10 cấu hình nằm trong nhiễu → chỉ 2 cần điều khiển là thật |
+| [`notebooks/02_speed_kaggle.ipynb`](notebooks/02_speed_kaggle.ipynb) | Benchmark 12 cần điều khiển tốc độ | **bf16-emulation chậm hơn fp16 3.2–3.4x** · **2×T4 nhanh 1.72x** · `packing` chậm hơn 1.41x. Chạy 2 lần → nhiễu run-to-run **2.0%**, nên 5 cấu hình giữa bảng không phân biệt được |
 | [`notebooks/00_frameworks.ipynb`](notebooks/00_frameworks.ipynb) | Probe 23 framework + HF vs TRL + vLLM + lm-eval | **TRL nhanh 1.20x, ít VRAM 29%** so với `Trainer` tự viết · **vLLM nhanh 1.62x** · 15/16 framework nhóm an toàn dùng được |
 | [`src/*.py`](src/) | Bản local của track LLM SFT | RTX 5060 Ti: 44/60 (73.3%), 108s |
 

@@ -81,3 +81,32 @@ Lượng hoá khi deploy (số từ `smartkids-finetune` của bạn — bằng 
 | **Q2_K** | **18.4%** ⚠️ và 71.1% câu bị cắt |
 
 **Q2_K phá model.** Q4_K_M là sàn thực dụng. Đừng nén dưới 4-bit để lấy vài trăm MB.
+
+---
+
+## Nhiều GPU: `accelerate launch --multi_gpu` — đã đo 1.72x
+
+Kaggle cho **2×T4**. Đo thật trên model 0.6B / 400 mẫu:
+
+| | Giây |
+|---|---|
+| 1×T4 | 23.0 |
+| **2×T4** | **13.4** |
+
+**1.72x** — tức **86% hiệu suất scaling** (lý tưởng 2.00x; phần hụt là overhead đồng bộ).
+Tốt hơn kỳ vọng thông thường, ngay cả với model nhỏ nhất và dataset nhỏ nhất.
+
+### Ba cách làm — chỉ một cách đúng
+
+| Cách | Kết quả |
+|---|---|
+| `device_map="auto"` | ❌ **KHÔNG phải data parallel.** Nó chia *layer* lên các GPU (model parallel) — dùng để nhét model không vừa 1 card, **không tăng tốc** |
+| Để `Trainer` tự thấy 2 GPU | ❌ Nó âm thầm bọc `nn.DataParallel` → chậm, và **nhân đôi batch hiệu dụng** mà không nói. TRL `SFTTrainer` thì từ chối hẳn: `ValueError: SFTTrainer does not support nn.DataParallel` |
+| `accelerate launch --multi_gpu --num_processes=2 train.py` | ✅ **Đúng.** DDP thật, mỗi GPU một process |
+
+🔴 **Vì cách 2 im lặng**, mọi benchmark trong `notebooks/` đều ghim `CUDA_VISIBLE_DEVICES=0`
+trước `import torch`. Nếu không, bạn đo một thứ khác với thứ bạn nghĩ mình đang đo — đúng
+điều đã xảy ra với notebook 01 run đầu (623s, 76.67%) và làm kết quả đó không dùng được.
+
+⚠️ DDP cần **script riêng** (`.py`), không chạy trong cell notebook. Số liệu:
+[`results/02_speed_kaggle_t4.md`](../results/02_speed_kaggle_t4.md)
