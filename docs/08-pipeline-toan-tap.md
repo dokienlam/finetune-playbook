@@ -226,7 +226,7 @@ weight_decay       = 0.01
 | 1 | **Chọn đúng dtype** | **Đã đo: bf16-emulation chậm hơn fp16 2.83x trên T4.** Lỗi 1 dòng, tốn nhiều nhất. Xem bẫy `is_bf16_supported()` |
 | 2 | **`packing=True`** (TRL) | ⚠️ **Đã đo: chậm hơn 0.73x** trên dữ liệu ngắn+đều. Chỉ thắng khi độ dài phân tán rộng hoặc `max_length` gần `p95` |
 | 3 | ~~`group_by_length`~~ / sort theo length | ⚠️ **Đã đo: không lợi gì** (1.00x) khi phân phối độ dài hẹp. Và `group_by_length` đã bị bỏ ở transformers v5 |
-| 3b | **Dùng TRL thay vì tự viết `Trainer`** | **Đã đo: nhanh 1.20x, ít VRAM 29%**, loss y hệt |
+| 3b | **Dùng TRL thay vì tự viết `Trainer`** | **Đã đo: nhanh 1.18–1.20x, ít VRAM 29%**, loss y hệt |
 | 4 | ~~Tăng batch tới sát trần VRAM~~ | ⚠️ **Đã đo: batch 8→16 không nhanh hơn, VRAM 1.8x.** GPU bão hoà sớm với sequence ngắn |
 | 5 | **`attn_implementation="sdpa"`** | 🔴 FlashAttention-2 **cần sm_80+**, không chạy trên T4 |
 | 6 | **Unsloth** | Công bố ~2x nhanh + ít VRAM. 🔴 ghi đè torch → session riêng |
@@ -482,8 +482,8 @@ Kaggle T4. Xem [`results/`](../results/):
 | Phát hiện | Số |
 |---|---|
 | bf16-emulation vs fp16 trên T4 | **3.2–3.4x chậm hơn** (2 run: 72.8s / 77.7s vs 22.8s) |
-| TRL SFTTrainer vs HF Trainer tự viết | **1.20x nhanh hơn, 29% ít VRAM**, loss y hệt |
-| vLLM vs `transformers.generate` | **1.62x nhanh hơn** (batch 32) |
+| TRL SFTTrainer vs HF Trainer tự viết | **1.18–1.20x nhanh hơn, 29% ít VRAM**, loss y hệt (2 run) |
+| vLLM vs `transformers.generate` | **1.58–1.62x nhanh hơn** (batch 32, 2 run) |
 | `packing=True` trên data ngắn+đều | **1.41x chậm hơn**, VRAM 1.6x |
 | **2×T4 `accelerate launch --multi_gpu`** | **1.72x nhanh hơn** (86% hiệu suất) — ngay cả với 0.6B / 400 mẫu |
 | sort theo length khi phân phối hẹp | **1.00x — không lợi gì** |
@@ -494,3 +494,55 @@ Kaggle T4. Xem [`results/`](../results/):
 🔴 **BỐN lời khuyên của tôi đã bị số liệu bác bỏ** (packing · sort theo length · tăng batch · "2 GPU chỉ lợi khi model lớn"). Giữ lại trong
 tài liệu kèm số, không xoá — vì sai ở đâu cũng là thông tin. Bài học: **đo một lần đáng hơn ba
 lần suy luận.**
+
+
+---
+
+## Mẹo về *cách đo*, không phải cách tối ưu
+
+Tất cả notebook trong repo này đã chạy **ít nhất 2 lần**. Việc đó dạy được mấy điều mà một run
+không bao giờ nói cho bạn:
+
+### 1. ⭐ VRAM tin cậy hơn thời gian rất nhiều
+
+Qua 2 run độc lập của cùng cấu hình:
+
+| Thước đo | Chênh giữa 2 run |
+|---|---|
+| **VRAM đỉnh** | **0.000 GB — y hệt từng byte** (4.500 / 3.183 GB) |
+| Thời gian train | 3–5% |
+| tok/s inference | 1.1–1.4% |
+
+**VRAM là tất định.** Nếu hai cấu hình khác VRAM, đó là khác biệt thật — **không cần chạy nhiều
+lần để xác nhận**. Thời gian thì phải.
+
+Hệ quả thực dụng: khi bạn so hai cấu hình và chênh lệch thời gian dưới ~5%, **hãy nhìn VRAM** để
+quyết định. Ví dụ `sdpa` vs `eager`: thời gian trong nhiễu, nhưng VRAM 7.61 vs 8.15 GB lặp lại
+chính xác ở cả 2 run → chọn `sdpa`.
+
+### 2. Thời gian *cài đặt* biến động cực lớn
+
+`llamafactory`: **0.6 phút** (run A) vs **13.1 phút** (run B) — chênh **22 lần**. Cùng lệnh, cùng
+môi trường. Nguyên nhân có thể là lấy wheel sẵn so với phải build. Đừng đưa thời gian cài vào
+ngân sách thời gian mà không có biên an toàn lớn.
+
+### 3. Lưu kết quả TRƯỚC bước có thể làm chết kernel
+
+Notebook probe framework chết **2 lần, ở 2 chỗ khác nhau** (`vlmeval`, rồi `axolotl`). Lần đầu ô
+lưu báo cáo nằm ở cuối → mất sạch JSON, phải vớt số từ log. Sau khi dời ô lưu **lên trước** phần
+probe, dữ liệu sống sót dù kernel vẫn chết.
+
+Bạn không thể kiểm tra "cái này có phá môi trường không" mà không chấp nhận rủi ro bị phá.
+**Giải pháp không phải làm nó không chết, mà là lưu dữ liệu trước khi nó chết.**
+
+### 4. Validate code sinh ra bởi code
+
+Lỗi escaping `\n` trong f-string làm chết 3 lần trong cùng một session. `tools/validate_nb.py`
+parse từng cell notebook — nhưng **không** parse chuỗi script nhúng *trong* cell. Lỗ đó để lọt
+lỗi thứ ba. Fix: notebook tự `ast.parse()` script ngay sau khi viết file, trước khi tốn một lần
+`accelerate launch`.
+
+### 5. Handler lỗi cũng là code, cũng phải test
+
+`except torch.cuda.OutOfMemoryError: print(f"batch {bs:<24s} OOM")` — `bs` là `int`, `:s` ném
+`ValueError` **trong chính cái handler**. OOM xảy ra đúng như dự kiến, nhưng notebook vẫn chết.
