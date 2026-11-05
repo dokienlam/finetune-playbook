@@ -481,15 +481,16 @@ Kaggle T4. Xem [`results/`](../results/):
 
 | Phát hiện | Số |
 |---|---|
-| bf16-emulation vs fp16 trên T4 | **3.19x chậm hơn** (run đầy đủ: 72.8s vs 22.8s) |
+| bf16-emulation vs fp16 trên T4 | **3.2–3.4x chậm hơn** (2 run: 72.8s / 77.7s vs 22.8s) |
 | TRL SFTTrainer vs HF Trainer tự viết | **1.20x nhanh hơn, 29% ít VRAM**, loss y hệt |
 | vLLM vs `transformers.generate` | **1.62x nhanh hơn** (batch 32) |
-| `packing=True` trên data ngắn+đều | **1.37x chậm hơn** (30.2s vs 22.0s), VRAM 1.6x |
+| `packing=True` trên data ngắn+đều | **1.41x chậm hơn**, VRAM 1.6x |
+| **2×T4 `accelerate launch --multi_gpu`** | **1.72x nhanh hơn** (86% hiệu suất) — ngay cả với 0.6B / 400 mẫu |
 | sort theo length khi phân phối hẹp | **1.00x — không lợi gì** |
 | tăng batch 8→16 | **không nhanh hơn**, VRAM 1.8x (GPU đã bão hoà) |
 | `sdpa` vs `eager` | tốc độ ngang, nhưng **VRAM 7.61 vs 8.15 GB** |
 | σ accuracy (3 seed, LoRA text→SQL) | **0.79% → ngưỡng nhiễu 1.57%** |
 
-🔴 **BA lời khuyên của tôi đã bị số liệu bác bỏ** (packing · sort theo length · tăng batch). Giữ lại trong
+🔴 **BỐN lời khuyên của tôi đã bị số liệu bác bỏ** (packing · sort theo length · tăng batch · "2 GPU chỉ lợi khi model lớn"). Giữ lại trong
 tài liệu kèm số, không xoá — vì sai ở đâu cũng là thông tin. Bài học: **đo một lần đáng hơn ba
 lần suy luận.**
