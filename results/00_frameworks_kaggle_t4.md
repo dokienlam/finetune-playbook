@@ -97,7 +97,38 @@ phải `pip freeze` khi báo cáo kết quả.
 nhân có thể là phải build wheel thay vì lấy wheel sẵn. Nếu bạn đưa nó vào pipeline, **đừng giả
 định thời gian cài ổn định**.
 
-### Vì sao notebook này báo ERROR dù dữ liệu đầy đủ
+### 🔴 Vì sao notebook này báo ERROR dù dữ liệu đầy đủ — và vì sao không sửa được
+
+Notebook chạy **3 lần**, kernel chết **cả 3 lần**, mỗi lần ở **một package khác nhau**:
+
+| Run | Chết ở | Bằng chứng ngược |
+|---|---|---|
+| A | `vlmeval` (cuối danh sách) | `llama-cpp-python` trước đó **thành công**, 4.7 phút |
+| B | `axolotl` | — |
+| C | `llama-cpp-python` | `sglang` trước đó báo `INSTALL-FAIL` **sạch sẽ** |
+
+**Nguyên nhân không phải một package cụ thể.** Bằng chứng: cùng một package vừa thành công ở
+run này lại làm chết kernel ở run khác. Nguyên nhân thật là **hư hại môi trường tích luỹ** — sau
+3–4 lần cài/gỡ torch, kernel mong manh và bước build nặng tiếp theo (`llama-cpp-python` biên
+dịch C++) làm cạn RAM.
+
+🔴 **Tôi đã sai cách tiếp cận 2 lần:** bỏ `vlmeval`, rồi bỏ `axolotl`, mỗi lần tốn ~40 phút GPU
+để rồi cái tiếp theo chết. **Đập chuột chũi.** Đáng lẽ phải nhận ra sau lần thứ hai rằng các
+package chết khác nhau nghĩa là package không phải biến số.
+
+### Hai cách đúng
+
+1. **Lưu kết quả trước và sau từng bước** → mất tối đa 1 phép đo. Notebook giờ ghi
+   `wreckers_partial.json` sau *từng* framework, không phải sau cả vòng lặp.
+2. **Một kernel cho một framework** nếu cần kết quả đầy đủ chắc chắn.
+
+`axolotl` đã được **khôi phục** vào danh sách probe — nó không phải nguyên nhân, và kết quả
+`INSTALL-FAIL` của nó là thông tin hữu ích.
+
+**Notebook này sẽ luôn báo `ERROR` trên Kaggle. Đó là dự kiến, không phải lỗi cần sửa** — báo cáo
+chính đã lưu xong trước khi phần probe bắt đầu.
+
+### Chi tiết từng framework
 
 Kernel chết **hai lần, ở hai chỗ khác nhau** trong phần probe nhóm phá môi trường:
 run A chết ở `vlmeval`, run B chết ở `axolotl`. Cả hai đều là framework **không cài được trên
@@ -107,8 +138,8 @@ Kaggle**; chúng không chỉ fail mà làm sập cả kernel.
 chấp nhận rủi ro bị phá. **Giải pháp không phải là làm nó không chết, mà là lưu dữ liệu trước khi
 nó chết** — và điều đó đã hoạt động.
 
-Đã bỏ `vlmeval` và `axolotl` khỏi danh sách probe (cả hai đã xác nhận không cài được, giữ lại
-chỉ để đốt thời gian GPU). Cách cài nếu bạn vẫn muốn thử:
+Chỉ `vlmeval` bị bỏ — vì nó **không có trên PyPI** nên probe nó bằng `pip install vlmeval` là
+vô nghĩa. Cách cài nếu bạn muốn thử:
 ```bash
 pip install git+https://github.com/open-compass/VLMEvalKit.git   # vlmeval
 pip install axolotl --no-build-isolation                          # axolotl, van co the fail o zstandard
